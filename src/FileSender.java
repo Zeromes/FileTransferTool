@@ -5,13 +5,16 @@ public class FileSender {
 	
 	public static void main(String[] args) throws Exception{
 		// TODO 自动生成的方法存根
+		
 		if(args.length!=2) {
 			System.out.println("参数错误！请以接收方ip地址和文件路径作为参数！");
 		}
 		else {
+			Process p = Runtime.getRuntime().exec("netsh advfirewall firewall add rule name= \"Open Port 61110 in\" dir=in action=allow protocol=UDP localport=61110 remoteport=61111");
+			p = Runtime.getRuntime().exec("netsh advfirewall firewall add rule name= \"Open Port 61110 out\" dir=out action=allow protocol=UDP localport=61110 remoteport=61111");
 			File file = new File(args[1]);
 			long fileLength = file.length();
-			try(DatagramSocket socket = new DatagramSocket(0);
+			try(DatagramSocket socket = new DatagramSocket(61110);
 				InputStream fileInput = new FileInputStream(file);){
 				socket.setSoTimeout(5000);
 				String fileInfo = fileLength + ";" + file.getName();

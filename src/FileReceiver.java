@@ -16,6 +16,15 @@ public class FileReceiver {
 			System.out.println("参数错误！请以要存放文件的目录作为参数！");
 		}
 		else {
+			try
+			{
+				Process p = Runtime.getRuntime().exec("netsh advfirewall firewall add rule name= \"Open Port 61111 in\" dir=in action=allow protocol=UDP localport=61111 remoteport=61110");
+				p = Runtime.getRuntime().exec("netsh advfirewall firewall add rule name= \"Open Port 61111 out\" dir=out action=allow protocol=UDP localport=61111 remoteport=61110");
+			}
+			catch (Exception e)
+			{
+			    e.printStackTrace();
+			}
 			try(DatagramSocket socket = new DatagramSocket(61111);){
 				File dir = new File(args[0]);
 				if(dir.exists()) {
