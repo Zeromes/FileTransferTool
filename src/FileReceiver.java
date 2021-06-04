@@ -1,12 +1,14 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.util.Scanner;
 
 public class FileReceiver {
 
@@ -16,15 +18,14 @@ public class FileReceiver {
 			System.out.println("参数错误！请以要存放文件的目录作为参数！");
 		}
 		else {
-			try
-			{
-				Process p = Runtime.getRuntime().exec("netsh advfirewall firewall add rule name= \"Open Port 61111 in\" dir=in action=allow protocol=UDP localport=61111 remoteport=61110");
-				p = Runtime.getRuntime().exec("netsh advfirewall firewall add rule name= \"Open Port 61111 out\" dir=out action=allow protocol=UDP localport=61111 remoteport=61110");
-			}
-			catch (Exception e)
-			{
-			    e.printStackTrace();
-			}
+//			try {
+//				Runtime.getRuntime().exec("powershell -command \"Start-Process -filepath \\\"netsh\\\" -argumentList \\\"advfirewall firewall delete rule name=FileReceiver\\\" -Verb runAs -windowstyle Hidden\"");
+//				Runtime.getRuntime().exec("powershell -command \"Start-Process -filepath \\\"netsh\\\" -argumentList \\\"advfirewall firewall add rule name=FileReceiver dir=in action=allow protocol=UDP localport=61111 remoteport=61110\\\" -Verb runAs -windowstyle Hidden\"");
+//				Runtime.getRuntime().exec("powershell -command \"Start-Process -filepath \\\"netsh\\\" -argumentList \\\"advfirewall firewall add rule name=FileReceiver dir=out action=allow protocol=UDP localport=61111 remoteport=61110\\\" -Verb runAs -windowstyle Hidden\"");
+//			}
+//			catch(Exception e) {
+//				e.printStackTrace();
+//			}
 			try(DatagramSocket socket = new DatagramSocket(61111);){
 				File dir = new File(args[0]);
 				if(dir.exists()) {
@@ -40,6 +41,14 @@ public class FileReceiver {
 				System.out.println("等待接收文件...");
 	    		DatagramPacket receivePack = new DatagramPacket(new byte[8192], 8192);
 				socket.receive(receivePack);
+				//直到收到的不是ERROR则继续
+//				while(new String(receivePack.getData(),0,receivePack.getLength()).equals("ERROR")) {
+//					DatagramPacket errorPack = new DatagramPacket("ERROR".getBytes(), 0, "ERROR".getBytes().length, InetAddress.getByName(args[0]), 61111);
+//					socket.send(errorPack);
+//					receivePack = new DatagramPacket(new byte[8192], 8192);
+//					socket.receive(receivePack);
+//				}
+				System.out.println("接收到文件信息，正在处理...");
 				//收到的第一个包包含文件信息
 				String fileInfo = new String(receivePack.getData(),0,receivePack.getLength());
 				long fileLength = Long.parseLong(fileInfo.split(";")[0]);
@@ -49,6 +58,7 @@ public class FileReceiver {
 				try(OutputStream fileInput = new FileOutputStream(file);){
 					DatagramPacket InfoConfirmPack = new DatagramPacket(new byte[1], 0, 1, receivePack.getSocketAddress());
 					socket.send(InfoConfirmPack);
+					System.out.println("处理完毕！准备接收");
 					long receivedLength = 0;
 					while(true) {
 						receivePack = new DatagramPacket(new byte[8192], 8192);
@@ -67,7 +77,7 @@ public class FileReceiver {
 					}
 				}
 				catch(SocketTimeoutException e) {
-					System.out.println("\n无法连接到接收方！");
+					System.out.println("\n连接超时！");
 				}
 				catch(Exception e) {
 					e.printStackTrace();
@@ -76,6 +86,7 @@ public class FileReceiver {
 			catch(Exception e) {
 				e.printStackTrace();
 			}
+			System.out.println("程序已退出");
 		}
 	}
 
